@@ -63,7 +63,7 @@ router.post('/auth/verify-otp', async (req, res) => {
         if (!compareOtp) {
             return res.status(400).json({ message: 'Invalid OTP' });
         }
-        const user =await User.findOne(
+        const user = await User.findOne(
             {
                 where: { ContactNumber }
             })
@@ -83,36 +83,19 @@ router.post('/auth/verify-otp', async (req, res) => {
 });
 
 router.post('/auth/forgot-password', async (req, res) => {
-    const { ContactNumber, otp, newPassword } = req.body;
-    if (!ContactNumber || !otp || !newPassword) {
-        return res.status(400).json({ message: 'ContactNumber, otp, and newPassword are required' });
-    }
     try {
-        const expectedOtp = await OTP.findOne({
-            where: { ContactNumber },
-            order: [['createdAt', 'DESC']]
-        });
-        if (!expectedOtp) {
-            return res.status(400).json({ message: 'No OTP found' });
+        const { ContactNumber } = req.body;
+        if (!ContactNumber) {
+            return res.status(400).json({ message: 'ContactNumber is required' });
         }
-        if (expectedOtp.expiresAt < new Date()) {
-            return res.status(400).json({ message: 'OTP expired' });
-        }
-        const compareOtp = await bcrypt.compare(otp, expectedOtp.otp);
-        if (!compareOtp) {
-            return res.status(400).json({ message: 'Invalid OTP' });
-        }
-        const hashedPass = await bcrypt.hash(newPassword, 10);
-        const [updated] = await User.update(
-            { Password: hashedPass },
-            { where: { ContactNumber } }
-        );
-        if (!updated) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({ message: 'Password updated successfully' });
-    } catch (err) {
-        res.status(500).json({ message: 'Failed to reset password', error: err.message });
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        await OTP.create({ ContactNumber, otp: hashedOtp, expiresAt });
+        res.status(200).json({ message: 'OTP sent successfully', otp });
+    }
+    catch (err) {
+        res.status(500).json({ message: 'Failed to store OTP', error: err.message });
     }
 });
 
