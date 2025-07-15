@@ -1,8 +1,9 @@
-const mongoose = require('mongoose')
+const { Sequelize } = require('sequelize');
 
-const db = async()=>
-    {
-        await mongoose.connect('mongodb+srv://rocktheway2akash:gR2Jv3ErtpicZOfo@geminichat.eomv3bj.mongodb.net/geminiChat?retryWrites=true&w=majority&appName=GeminiChat')
-    }
+const sequelize = new Sequelize('chatApp', 'postgres', 'admin', {
+  host: 'localhost',
+  dialect: 'postgres',
+  logging: false,
+});
 
-module.exports = db;
+module.exports = sequelize;

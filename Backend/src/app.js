@@ -1,15 +1,20 @@
-const express = require('express')
-const db = require('../utils/database')
+const express = require('express');
+const sequelize = require('../utils/database');
+const userRouter = require('../router/userRouter');
+const app = express();
 
-const app = express()
+app.use(express.json());
+app.use('/', userRouter);
 
-db().then(() => {
-    console.log("Connection Done....")
-    app.listen(3000, () => {
-        console.log(`App listening on port 300`)
-    })
-})
-.catch((err)=>
-    {
-        console.log("Error in Connection with Database:",err)
-    })
+(async () => {
+    try {
+        await sequelize.authenticate();
+        await sequelize.sync(); 
+        console.log('Connection to database has been established.');
+        app.listen(3000, () => {
+            console.log('App listening on port 300');
+        });
+    } catch (err) {
+        console.error('Unable to connect to the database:', err);
+    }
+})();
