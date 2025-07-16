@@ -1,9 +1,12 @@
 const express = require('express');
 const sequelize = require('../utils/database');
 const userRouter = require('../router/userRouter');
+var cookieParser = require('cookie-parser');
+
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser())
 app.use('/', userRouter);
 
 (async () => {
