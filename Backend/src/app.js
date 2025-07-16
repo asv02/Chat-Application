@@ -2,12 +2,14 @@ const express = require('express');
 const sequelize = require('../utils/database');
 const userRouter = require('../router/userRouter');
 var cookieParser = require('cookie-parser');
+const chatRouter = require('../router/ChatRouter')
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser())
 app.use('/', userRouter);
+app.use('/', chatRouter);
 
 (async () => {
     try {
