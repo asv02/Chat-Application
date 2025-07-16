@@ -13,6 +13,7 @@ const User = sequelize.define('User', {
   ContactNumber: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
     validate: {
       is: /^[0-9+\-() ]+$/,
       notEmpty: true,

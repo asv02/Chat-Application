@@ -3,6 +3,8 @@ const router = express.Router();
 const { Chat, Message, ChatParticipant, User } = require('../models/Chat');
 const auth = require('../middleware/auth');
 const { GoogleGenAI } = require("@google/genai");
+const NodeCache = require('node-cache');
+const chatroomCache = new NodeCache({ stdTTL: 300 }); // 5 minutes TTL
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -20,17 +22,26 @@ router.post('/chatroom', auth, async (req, res) => {
 router.get('/chatroom', auth, async (req, res) => {
     try {
         const user = req.user;
-        const chats = await Chat.findAll({
-            include: [
-                {
-                    model: User,
-                    as: 'Participants',
-                    attributes: ['id', 'firstname', 'lastname', 'ContactNumber'],
-                    through: { attributes: [] },
-                    where: { id: user.id }
-                }
-            ]
-        });
+        const cacheKey = `chatrooms_${user.id}`;
+        let chats = chatroomCache.get(cacheKey);
+        console.log("Chats->", chats);
+
+        if (!chats) {
+            const dbChats = await Chat.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'Participants',
+                        attributes: ['id', 'firstname', 'lastname', 'ContactNumber'],
+                        through: { attributes: [] },
+                        where: { id: user.id }
+                    }
+                ]
+            });
+            chats = dbChats.map(chat => chat.get({ plain: true }));
+            chatroomCache.set(cacheKey, chats);
+        }
+
         res.status(200).json({ chatrooms: chats });
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch chatrooms', error: err.message });
