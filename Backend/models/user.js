@@ -33,6 +33,7 @@ const User = sequelize.define('User', {
   },
   Subscription: {
     type: DataTypes.STRING,
+    defaultValue: 'BASIC',
     validate: {
       isIn: [['BASIC', 'PRO']],
     }

@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const { GoogleGenAI } = require("@google/genai");
 const NodeCache = require('node-cache');
 const chatroomCache = new NodeCache({ stdTTL: 300 }); // 5 minutes TTL
+const rateLimitCache = new NodeCache(); 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -68,6 +69,17 @@ router.post('/chatroom/:id/message', auth, async (req, res) => {
         const user = req.user;
         const { text } = req.body;
         if (!text) return res.status(400).json({ message: 'Message text is required' });
+
+        // Rate limit for BASIC users
+        if (user.Subscription === 'BASIC') {
+            const today = new Date().toISOString().slice(0, 10);
+            const rateKey = `msgcount_${user.id}_${today}`;
+            let count = rateLimitCache.get(rateKey) || 0;
+            if (count >= 5) {
+                return res.status(429).json({ message: 'Daily message limit reached for Basic users.' });
+            }
+            rateLimitCache.set(rateKey, count + 1, 24 * 60 * 60); // 1 day
+        }
 
         const isParticipant = await ChatParticipant.findOne({ where: { userId: user.id, chatId: req.params.id } });
         if (!isParticipant) return res.status(403).json({ message: 'Not a participant of this chatroom' });
