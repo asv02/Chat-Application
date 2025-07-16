@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../src/User');
 const express = require('express');
 const router = express.Router();
 const OTP = require('../models/Otp');
