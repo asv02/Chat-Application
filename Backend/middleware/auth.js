@@ -9,7 +9,7 @@ const auth = async (req, res, next) => {
         }
         let temp;
         try {
-            temp = jwt.verify(token, 'Akash@123');
+            temp = jwt.verify(token, process.env.JWT_SECRET_KEY);
         } catch (err) {
             return res.status(401).json({ message: 'Invalid token' });
         }

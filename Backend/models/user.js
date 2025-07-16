@@ -20,8 +20,8 @@ const User = sequelize.define('User', {
   },
   Password:
   {
-    type:DataTypes.STRING,
-    allowNull:false,
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   gender: {
     type: DataTypes.STRING,
@@ -30,9 +30,15 @@ const User = sequelize.define('User', {
       isIn: [['male', 'female', 'others']],
     },
   },
+  Subscription: {
+    type: DataTypes.STRING,
+    validate: {
+      isIn: [['BASIC', 'PRO']],
+    }
+  },
   refresh_token:
   {
-    type:DataTypes.STRING,
+    type: DataTypes.STRING,
   }
 }, {
   timestamps: true,

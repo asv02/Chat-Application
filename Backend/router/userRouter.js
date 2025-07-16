@@ -69,8 +69,8 @@ router.post('/auth/verify-otp', async (req, res) => {
                 where: { ContactNumber }
             })
         // I have stated mobile number to be unique so passing that for uniqueness.
-        const access_token = await jwt.sign({ contact: ContactNumber }, "Akash@123", { expiresIn: '1h' })
-        const refresh_token = await jwt.sign({ contact: ContactNumber }, "Akash@123", {
+        const access_token = await jwt.sign({ contact: ContactNumber }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
+        const refresh_token = await jwt.sign({ contact: ContactNumber }, process.env.JWT_SECRET_KEY, {
             expiresIn: '1d'
         })
         user.refresh_token = refresh_token

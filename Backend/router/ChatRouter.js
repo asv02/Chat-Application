@@ -2,10 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { Chat, Message, ChatParticipant, User } = require('../models/Chat');
 const auth = require('../middleware/auth');
-const {GEMINI_API_KEY} = require('../utils/Constants')
 const { GoogleGenAI } = require("@google/genai");
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 router.post('/chatroom', auth, async (req, res) => {
     try {
