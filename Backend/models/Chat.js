@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../utils/database');
-const User = require('../src/User');
+const User = require('./User');
 
 const Chat = sequelize.define('Chat', {}, { timestamps: true });
 
