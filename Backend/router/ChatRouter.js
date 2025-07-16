@@ -108,4 +108,21 @@ router.post('/chatroom/:id/message', auth, async (req, res) => {
     }
 });
 
+router.get('/subscription/status', auth, async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        let subscription = user.Subscription;
+        if (!subscription) {
+            const dbUser = await User.findByPk(user.id);
+            subscription = dbUser ? dbUser.Subscription : null;
+        }
+        res.json({ subscription: subscription || 'BASIC' });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch subscription status', error: err.message });
+    }
+});
+
 module.exports = router;
