@@ -5,7 +5,8 @@ const auth = require('../middleware/auth');
 const { GoogleGenAI } = require("@google/genai");
 const NodeCache = require('node-cache');
 const chatroomCache = new NodeCache({ stdTTL: 300 }); // 5 minutes TTL
-const rateLimitCache = new NodeCache(); 
+const rateLimitCache = new NodeCache();
+const geminiQueue = require('../utils/geminiQueue');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -87,44 +88,32 @@ router.post('/chatroom/:id/message', auth, async (req, res) => {
         // Save user message
         const message = await Message.create({ chatId: req.params.id, senderId: user.id, text });
 
-        // Fetch chat history
-        const messages = await Message.findAll({
-            where: { chatId: req.params.id },
-            order: [['createdAt', 'ASC']],
-            include: [{ model: User, as: 'sender', attributes: ['id', 'firstname', 'lastname', 'ContactNumber'] }]
-        });
-
-        const history = messages.map(msg => ({
-            role: msg.senderId ? "user" : "model",
-            parts: [{ text: msg.text }]
-        }));
-
-        history.push({
-            role: "user",
-            parts: [{ text }]
-        });
-
-        const chat = ai.chats.create({
-            model: "gemini-2.5-flash",
-            history: history
-        });
-
-        const geminiResponse = await chat.sendMessage({ message: text });
-        const geminiText = geminiResponse.text; // to show to user
-
-        const geminiMessage = await Message.create({ // to store it
-            chatId: req.params.id,
-            senderId: null,
-            text: geminiText
-        });
-
-        res.status(201).json({
-            message: 'Message sent',
-            data: {
-                userMessage: message,
-                geminiMessage: geminiMessage,
-                geminiText: geminiText
+        // Enqueue Gemini job (in-memory)
+        geminiQueue.add(async () => {
+            // Fetch chat history
+            const messages = await Message.findAll({
+                where: { chatId: req.params.id },
+                order: [['createdAt', 'ASC']],
+                include: [{ model: User, as: 'sender', attributes: ['id', 'firstname', 'lastname', 'ContactNumber'] }]
+            });
+            const history = messages.map(msg => ({
+                role: msg.senderId ? 'user' : 'model',
+                parts: [{ text: msg.text }]
+            }));
+            history.push({ role: 'user', parts: [{ text }] });
+            try {
+                const chat = ai.chats.create({ model: 'gemini-2.5-flash', history });
+                const geminiResponse = await chat.sendMessage({ message: text });
+                const geminiText = geminiResponse.text;
+                await Message.create({ chatId: req.params.id, senderId: null, text: geminiText });
+            } catch (err) {
+                console.error('Gemini job failed:', err);
             }
+        });
+
+        res.status(202).json({
+            message: 'Message sent. Gemini response is being processed.',
+            data: { userMessage: message }
         });
     } catch (err) {
         res.status(500).json({ message: 'Failed to send message', error: err.message });

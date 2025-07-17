@@ -121,3 +121,29 @@ npm start
 - Secure your `.env` and never commit secrets to version control.
 
 ---
+
+## Asynchronous Gemini API Calls (BullMQ)
+
+This backend uses BullMQ and Redis to process Gemini API calls asynchronously when a user sends a message. This improves scalability and responsiveness.
+
+### How it works
+- When a user sends a message, the message is saved and a Gemini job is enqueued.
+- The Gemini worker (src/geminiWorker.js) processes jobs from the queue, calls the Gemini API, and saves the AI response as a message.
+- The user can fetch the chatroom messages to see the Gemini response once it's ready.
+
+### Running the Worker
+1. **Start Redis** (required for BullMQ):
+   - Install Redis: https://redis.io/download
+   - Start Redis server (default port 6379)
+
+2. **Start the Gemini Worker:**
+   ```
+   node src/geminiWorker.js
+   ```
+
+3. **Start the Backend API as usual:**
+   ```
+   npm start
+   ```
+
+---

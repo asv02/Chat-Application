@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "@google/genai": "^1.9.0",
-    "bullmq": "^5.56.4",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
@@ -9,6 +8,7 @@
     "jsonwebtoken": "^9.0.2",
     "node-cache": "^5.1.2",
     "nodemon": "^3.1.10",
+    "p-queue": "^7.3.4",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
