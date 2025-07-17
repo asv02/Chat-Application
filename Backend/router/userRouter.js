@@ -75,8 +75,8 @@ router.post('/auth/verify-otp', async (req, res) => {
         })
         user.refresh_token = refresh_token
         await user.save();
-        res.cookie('access_token', access_token)
-        res.cookie('refresh_token', refresh_token)
+        res.cookie('access_token', access_token, { httpOnly: true });
+        res.cookie('refresh_token', refresh_token, { httpOnly: true });
         res.status(200).json({ message: 'OTP verified' });
     } catch (err) {
         res.status(500).json({ message: 'Failed to verify OTP', error: err.message });
@@ -142,6 +142,28 @@ router.post('/auth/change-password', auth, async (req, res) => {
         res.status(500).json({ message: 'Something went wrong.', error: err.message });
     }
 })
+router.post('/auth/refresh-token', async (req, res) => {
+    const refreshToken = req.cookies.refresh_token || req.body.refresh_token;
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'No refresh token provided' });
+    }
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET_KEY);
+        const user = await User.findOne({ where: { ContactNumber: decoded.contact } });
+        if (!user || user.refresh_token !== refreshToken) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+        const newAccessToken = jwt.sign({ contact: user.ContactNumber }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+        const newRefreshToken = jwt.sign({ contact: user.ContactNumber }, process.env.JWT_SECRET_KEY, { expiresIn: '1d' });
+        user.refresh_token = newRefreshToken;
+        await user.save();
+        res.cookie('access_token', newAccessToken, { httpOnly: true });
+        res.cookie('refresh_token', newRefreshToken, { httpOnly: true });
+        res.status(200).json({ message: 'Token refreshed' });
+    } catch (err) {
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+});
 router.get('/user/me', auth, async (req, res) => {
     const user = req?.user;
     if (!user) {
